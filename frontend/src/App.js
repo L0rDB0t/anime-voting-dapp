@@ -5,6 +5,7 @@ import './App.css';
 
 const CONTRACT_ADDRESS = "0xD1516F6fA4F1EC48A0EDD31D0c0d4C9d817f6438";
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
+const SEPOLIA_RPC_URL = "https://sepolia.infura.io/v3/";
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -42,6 +43,29 @@ function App() {
     }
   }, [contract]);
 
+  const addSepoliaNetwork = useCallback(async () => {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: SEPOLIA_CHAIN_ID,
+          chainName: 'Sepolia Test Network',
+          nativeCurrency: {
+            name: 'Sepolia Ether',
+            symbol: 'ETH',
+            decimals: 18
+          },
+          rpcUrls: [SEPOLIA_RPC_URL],
+          blockExplorerUrls: ['https://sepolia.etherscan.io']
+        }]
+      });
+      return true;
+    } catch (addError) {
+      console.error("Error añadiendo red Sepolia:", addError);
+      return false;
+    }
+  }, []);
+
   const switchToSepolia = useCallback(async () => {
     try {
       await window.ethereum.request({
@@ -51,94 +75,88 @@ function App() {
       return true;
     } catch (switchError) {
       if (switchError.code === 4902) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: SEPOLIA_CHAIN_ID,
-              chainName: 'Sepolia Test Network',
-              nativeCurrency: {
-                name: 'Sepolia Ether',
-                symbol: 'ETH',
-                decimals: 18
-              },
-              rpcUrls: ['https://sepolia.infura.io/v3/'],
-              blockExplorerUrls: ['https://sepolia.etherscan.io']
-            }]
-          });
-          return true;
-        } catch (addError) {
-          console.error("Error añadiendo red Sepolia:", addError);
-          return false;
-        }
+        return await addSepoliaNetwork();
       }
       console.error("Error cambiando a Sepolia:", switchError);
       return false;
     }
-  }, []);
+  }, [addSepoliaNetwork]);
 
-  const init = useCallback(async () => {
+  const checkAndSwitchNetwork = useCallback(async () => {
     try {
-      if (!window.ethereum) {
-        throw new Error("MetaMask no está instalado");
-      }
-
-      // 1. Conectar cuenta primero
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
-      setAccount(accounts[0]);
-
-      // 2. Verificar/Configurar red
-      const currentChainId = await window.ethereum.request({
-        method: 'eth_chainId'
-      });
-
-      if (currentChainId !== SEPOLIA_CHAIN_ID) {
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (chainId !== SEPOLIA_CHAIN_ID) {
         const switched = await switchToSepolia();
         if (!switched) {
           throw new Error("Por favor cambia manualmente a Sepolia en MetaMask");
         }
       }
+      return true;
+    } catch (error) {
+      console.error("Error verificando red:", error);
+      throw error;
+    }
+  }, [switchToSepolia]);
 
-      // 3. Configurar provider y contrato
+  const initProviderAndContract = useCallback(async () => {
+    try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, AnimeVoting.abi, signer);
       setContract(contract);
+      return contract;
+    } catch (error) {
+      console.error("Error inicializando contrato:", error);
+      throw new Error("Error al conectar con el contrato");
+    }
+  }, []);
 
-      // 4. Cargar datos
-      await checkVoteStatus(accounts[0]);
-      await loadCharacters();
+  const initApp = useCallback(async () => {
+    try {
+      if (!window.ethereum) {
+        throw new Error("MetaMask no está instalado");
+      }
 
-      // Configurar listeners
-      contract.on("Voted", (voter, characterIndex) => {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts.length === 0) {
+        throw new Error("Ninguna cuenta conectada en MetaMask");
+      }
+      setAccount(accounts[0]);
+
+      await checkAndSwitchNetwork();
+      const contract = await initProviderAndContract();
+      
+      await Promise.all([
+        checkVoteStatus(accounts[0]),
+        loadCharacters()
+      ]);
+
+      contract.on("Voted", (voter) => {
         if (voter.toLowerCase() === accounts[0].toLowerCase()) {
           setHasVoted(true);
           setSuccess("¡Voto registrado con éxito!");
           setTimeout(() => setSuccess(null), 5000);
+          loadCharacters();
         }
-        loadCharacters();
       });
 
       return true;
     } catch (error) {
-      console.error("Error inicializando:", error);
+      console.error("Error inicializando app:", error);
       setError(error.message);
       return false;
     } finally {
       setLoading(prev => ({...prev, app: false}));
     }
-  }, [checkVoteStatus, loadCharacters, switchToSepolia]);
+  }, [checkAndSwitchNetwork, initProviderAndContract, checkVoteStatus, loadCharacters]);
 
   useEffect(() => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
+        setAccount(accounts.length > 0 ? accounts[0] : null);
         if (accounts.length > 0) {
-          setAccount(accounts[0]);
           checkVoteStatus(accounts[0]);
         } else {
-          setAccount(null);
           setHasVoted(false);
         }
       };
@@ -150,12 +168,17 @@ function App() {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
 
-      // Intenta conectar automáticamente si ya estaba conectado
+      // Intenta conectar automáticamente
       const tryAutoConnect = async () => {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          init();
-        } else {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            await initApp();
+          } else {
+            setLoading(prev => ({...prev, app: false}));
+          }
+        } catch (error) {
+          console.error("Error en auto-conexión:", error);
           setLoading(prev => ({...prev, app: false}));
         }
       };
@@ -168,8 +191,9 @@ function App() {
       };
     } else {
       setLoading(prev => ({...prev, app: false}));
+      setError("MetaMask no está instalado");
     }
-  }, [init, checkVoteStatus]);
+  }, [initApp, checkVoteStatus]);
 
   const handleVote = async (index) => {
     if (!contract) return;
@@ -210,9 +234,9 @@ function App() {
         throw new Error("MetaMask no está instalado. Redirigiendo...");
       }
       
-      const initialized = await init();
+      const initialized = await initApp();
       if (!initialized) {
-        throw new Error("No se pudo inicializar la aplicación");
+        throw new Error("No se pudo conectar con MetaMask");
       }
     } catch (error) {
       console.error("Error conectando wallet:", error);
@@ -243,7 +267,7 @@ function App() {
       <main>
         {error && (
           <div className="alert error">
-            {typeof error === 'string' ? error : error.message}
+            {error}
             {error.includes("Sepolia") && (
               <button className="network-button" onClick={switchToSepolia}>
                 Cambiar a Sepolia
@@ -319,4 +343,4 @@ function App() {
   );
 }
 
-export default App;s
+export default App;
