@@ -7,6 +7,15 @@ const CONTRACT_ADDRESS = "0xD1516F6fA4F1EC48A0EDD31D0c0d4C9d817f6438";
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
 const SEPOLIA_RPC_URL = "https://sepolia.infura.io/v3/";
 
+// Objeto con las imágenes de cada personaje
+const characterImages = {
+  "Naruto Uzumaki": "https://static.promediateknologi.id/crop/0x0:0x0/0x0/webp/photo/p2/250/2024/10/04/Screenshot_20240327-053541_X-2419721470-copy-840116736.jpg",
+  "Monkey D. Luffy": "https://i.pinimg.com/736x/cb/a3/56/cba356a43e049c1586638d2178182625.jpg",
+  "Goku": "https://elcomercio.pe/resizer/v2/YODWA6WAARAYVNV6COPUMUQFLE.jpg?auth=284742ee9496ca1638d0a0a092b1348e371d714899fe3a130db3e7e5cb1ae407&width=1200&height=810&quality=90&smart=true",
+  "Light Yagami": "https://i.pinimg.com/736x/64/82/dd/6482dd4787ac60aa8c5291e036a8dbdb.jpg",
+  "Eren Yeager": "https://s0.smartresize.com/wallpaper/999/880/HD-wallpaper-eren-yeager-attack-on-titan-shingeki-no-kyojin-manga-mikasa-anime-levi-thumbnail.jpg"
+};
+
 function App() {
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
@@ -168,7 +177,6 @@ function App() {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
 
-      // Intenta conectar automáticamente
       const tryAutoConnect = async () => {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -301,7 +309,18 @@ function App() {
               {characters.map((character, index) => (
                 <div key={index} className="character-card">
                   <div className="character-image">
-                    <div className="placeholder-image">{character.name.charAt(0)}</div>
+                    {characterImages[character.name] ? (
+                      <img 
+                        src={characterImages[character.name]} 
+                        alt={character.name}
+                        onError={(e) => {
+                          e.target.onerror = null; 
+                          e.target.src = "https://via.placeholder.com/150";
+                        }}
+                      />
+                    ) : (
+                      <div className="placeholder-image">{character.name.charAt(0)}</div>
+                    )}
                   </div>
                   <h2>{character.name}</h2>
                   <div className="vote-count">
