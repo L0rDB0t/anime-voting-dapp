@@ -1,4 +1,4 @@
-README - Anime Voting dApp 🗳️
+# README - Anime Voting dApp 🗳️
 Banner de la Aplicación
 
 Una aplicación descentralizada (dApp) para votar por tus personajes de anime favoritos en la blockchain de Ethereum (red de pruebas Sepolia).
@@ -22,7 +22,7 @@ Blockchain
 Herramientas
 <p align="left"> <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"> <img src="https://img.shields.io/badge/MetaMask-FF7B00?style=for-the-badge&logo=metamask&logoColor=white" alt="MetaMask"> <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel"> </p>
 🏗️ Estructura del Proyecto
-bash
+
 anime-voting-dapp/
 ├── contracts/               # Contratos inteligentes
 │   └── AnimeVoting.sol      # Lógica de votación
