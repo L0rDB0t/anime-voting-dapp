@@ -14,33 +14,15 @@ Resultados en tiempo real almacenados en la blockchain
 
 Diseño responsive que funciona en móviles y desktop
 
-🛠️ Tecnologías Utilizadas
+🛠️ Stack Tecnológico
 Frontend
-React.js - Biblioteca principal para la interfaz
-
-Ethers.js (v6) - Conexión con la blockchain y contratos inteligentes
-
-CSS Modules - Estilizado de componentes
-
-Vercel - Despliegue continuo
-
+<p align="left"> <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React"> <img src="https://img.shields.io/badge/Ethers.js-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" alt="Ethers.js"> <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3"> </p>
 Blockchain
-Solidity - Lenguaje para contratos inteligentes
-
-Hardhat - Entorno de desarrollo Ethereum
-
-OpenZeppelin - Librería de contratos seguros
-
-Sepolia Testnet - Red de pruebas de Ethereum
-
+<p align="left"> <img src="https://img.shields.io/badge/Solidity-363636?style=for-the-badge&logo=solidity&logoColor=white" alt="Solidity"> <img src="https://img.shields.io/badge/Hardhat-F7B93E?style=for-the-badge&logo=hardhat&logoColor=black" alt="Hardhat"> <img src="https://img.shields.io/badge/Sepolia-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" alt="Sepolia"> </p>
 Herramientas
-Git/GitHub - Control de versiones
-
-MetaMask - Wallet para interactuar con la dApp
-
-Infura - Nodos de Ethereum para conexión
-
-📦 Estructura del Proyecto
+<p align="left"> <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"> <img src="https://img.shields.io/badge/MetaMask-FF7B00?style=for-the-badge&logo=metamask&logoColor=white" alt="MetaMask"> <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel"> </p>
+🏗️ Estructura del Proyecto
+bash
 anime-voting-dapp/
 ├── contracts/               # Contratos inteligentes
 │   └── AnimeVoting.sol      # Lógica de votación
@@ -52,75 +34,89 @@ anime-voting-dapp/
 │   └── public/              # Assets estáticos
 ├── scripts/                 # Scripts de despliegue
 └── hardhat.config.js        # Configuración de Hardhat
-🚀 Cómo Ejecutarlo Localmente
+🚀 Instalación y Uso
 Requisitos Previos
-Node.js (v16+)
+Node.js v16+
 
-MetaMask instalado en tu navegador
+MetaMask instalado
 
-Fondos de prueba de Sepolia (puedes obtenerlos en Sepolia Faucet)
+Fondos de prueba de Sepolia (Faucet)
 
-Instalación
-Clona el repositorio:
+Configuración Inicial
+Clonar repositorio:
 
 bash
 git clone https://github.com/tu-usuario/anime-voting-dapp.git
 cd anime-voting-dapp
-Instala dependencias:
+Instalar dependencias:
 
 bash
 npm install
 cd frontend
 npm install
-Configura variables de entorno:
-Crea un archivo .env en la raíz con:
+Configurar variables de entorno:
 
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/TU_API_KEY
-PRIVATE_KEY=TU_LLAVE_PRIVADA_METAMASK
-Ejecución
-Inicia el servidor de desarrollo:
-
+bash
+# .env en raíz del proyecto
+SEPOLIA_RPC_URL="https://sepolia.infura.io/v3/TU_API_KEY"
+PRIVATE_KEY="TU_LLAVE_PRIVADA_METAMASK"
+Ejecución Local
 bash
 cd frontend
 npm start
 Abre http://localhost:3000 en tu navegador.
 
-🌐 Cómo Usar la Aplicación
-Conecta tu Wallet:
+📱 Cómo Usar la dApp
+Conectar Wallet
 
 Haz clic en "Conectar MetaMask"
 
-Acepta la conexión en la extensión de MetaMask
+Acepta la conexión en la extensión
 
 Asegúrate de estar en la red Sepolia
 
-Vota por tu personaje favorito:
+Votar
 
-Selecciona un personaje de la lista
+Selecciona un personaje
 
 Confirma la transacción en MetaMask
 
 ¡Tu voto quedará registrado en la blockchain!
 
-Ver resultados:
+Ver Resultados
 
 Los votos se actualizan en tiempo real
 
-Puedes ver el histórico en Sepolia Etherscan
+Histórico en Etherscan
 
-🔍 Detalles Técnicos del Contrato
-Contrato Desplegado: 0xD1516F6fA4F1EC48A0EDD31D0c0d4C9d817f6438
+🔍 Detalles del Contrato
+Dirección: 0xD1516F6fA4F1EC48A0EDD31D0c0d4C9d817f6438
 
 Funciones Principales:
 
-vote(uint256 characterIndex) - Registra un voto
+Función	Descripción
+vote(uint256)	Registra un voto para un personaje
+getAllCharacters()	Devuelve lista completa de personajes
+hasVoted(address)	Verifica si una dirección ya votó
+📜 Licencia
+Este proyecto está bajo la licencia MIT. Ver LICENSE para detalles.
 
-getAllCharacters() - Devuelve la lista completa de personajes y votos
+🤝 Contribuir
+¿Quieres mejorar el proyecto?
 
-hasVoted(address voter) - Verifica si una dirección ya votó
+Haz fork del repositorio
 
-📝 Licencia
-Este proyecto está bajo la licencia MIT - ver el archivo LICENSE para más detalles.
+Crea una rama (git checkout -b feature/mejora)
 
-🙌 Contribuciones
-Las contribuciones son bienvenidas. Por favor abre un issue o pull request para sugerir mejoras.
+Haz commit de tus cambios (git commit -m 'Añade nueva feature')
+
+Haz push a la rama (git push origin feature/mejora)
+
+Abre un Pull Request
+
+Hecho con ❤️ por [L0RDB0T]
+GitHub
+
+bash
+# Ejemplo de código destacado
+npm run build && vercel --prod
