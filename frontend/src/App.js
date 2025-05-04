@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import AnimeVoting from './contracts/AnimeVoting.json';
+import './App.css'; // Asegúrate de importar el CSS
 
 const CONTRACT_ADDRESS = "0xD1516F6fA4F1EC48A0EDD31D0c0d4C9d817f6438";
-const SEPOLIA_CHAIN_ID = "0xaa36a7"; // Chain ID de Sepolia en hexadecimal
+const SEPOLIA_CHAIN_ID = "0xaa36a7";
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -43,12 +44,38 @@ function App() {
 
   const init = useCallback(async () => {
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      if (!window.ethereum) {
+        throw new Error("MetaMask no está instalado");
+      }
 
-      // Verificar red correcta (Sepolia)
-      const network = await provider.getNetwork();
-      if (network.chainId !== 11155111n) {
-        throw new Error("Por favor cambia a la red Sepolia en MetaMask");
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      
+      // Verificar y configurar red correcta
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: SEPOLIA_CHAIN_ID }]
+        });
+      } catch (switchError) {
+        // Si la red no está añadida, la añadimos
+        if (switchError.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: SEPOLIA_CHAIN_ID,
+              chainName: 'Sepolia Test Network',
+              nativeCurrency: {
+                name: 'Sepolia Ether',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['https://sepolia.infura.io/v3/'],
+              blockExplorerUrls: ['https://sepolia.etherscan.io']
+            }]
+          });
+        } else {
+          throw new Error("Por favor cambia a la red Sepolia en MetaMask");
+        }
       }
 
       // Obtener cuentas
@@ -121,7 +148,7 @@ function App() {
       const tx = await contract.vote(index);
       await tx.wait();
       
-      setSuccess("Procesando tu voto...");
+      setSuccess("¡Voto registrado con éxito!");
       
     } catch (error) {
       console.error("Error votando:", error);
@@ -144,29 +171,24 @@ function App() {
     try {
       setLoading(prev => ({...prev, app: true}));
       setError(null);
+      
+      if (!window.ethereum) {
+        throw new Error("MetaMask no está instalado");
+      }
+      
       await init();
     } catch (error) {
       setError(error.message);
-    }
-  };
-
-  const switchToSepolia = async () => {
-    try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: SEPOLIA_CHAIN_ID }]
-      });
-    } catch (error) {
-      console.error("Error cambiando a Sepolia:", error);
-      setError("Error al cambiar a la red Sepolia");
+      setLoading(prev => ({...prev, app: false}));
     }
   };
 
   if (loading.app) {
     return (
-      <div className="App">
-        <div className="loading-container">
+      <div className="app-container">
+        <div className="loading-screen">
           <h1>Votación de Personajes de Anime</h1>
+          <div className="spinner"></div>
           <p>Cargando aplicación...</p>
         </div>
       </div>
@@ -174,58 +196,89 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <h1>Votación de Personajes de Anime</h1>
-      
-      {error && (
-        <div className="error-message">
-          {error}
-          {error.includes("Sepolia") && (
-            <button onClick={switchToSepolia}>
-              Cambiar a Sepolia
+    <div className="app-container">
+      <header>
+        <h1>Votación de Personajes de Anime</h1>
+      </header>
+
+      <main>
+        {error && (
+          <div className="alert error">
+            {error}
+            {error.includes("Sepolia") && (
+              <button className="network-button" onClick={() => window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: SEPOLIA_CHAIN_ID }]
+              })}>
+                Cambiar a Sepolia
+              </button>
+            )}
+            {error.includes("MetaMask no está instalado") && (
+              <a href="https://metamask.io/download.html" target="_blank" rel="noopener noreferrer" className="download-button">
+                Instalar MetaMask
+              </a>
+            )}
+          </div>
+        )}
+        
+        {success && <div className="alert success">{success}</div>}
+
+        {!account ? (
+          <div className="connect-section">
+            <button className="connect-button" onClick={connectWallet}>
+              Conectar MetaMask
             </button>
-          )}
-        </div>
-      )}
-      
-      {success && <div className="success-message">{success}</div>}
-
-      {!account ? (
-        <button className="connect-button" onClick={connectWallet}>
-          Conectar MetaMask
-        </button>
-      ) : (
-        <>
-          <div className="account-info">
-            <p>Conectado como: <span>{`${account.slice(0, 6)}...${account.slice(-4)}`}</span></p>
-            <p>Red: <span>Sepolia Testnet</span></p>
+            <p className="help-text">Necesitas MetaMask para interactuar con esta dApp</p>
           </div>
-
-          <div className="characters-list">
-            {characters.map((character, index) => (
-              <div key={index} className="character-card">
-                <h2>{character.name}</h2>
-                <p>Votos: {character.voteCount.toString()}</p>
-                {!hasVoted && (
-                  <button 
-                    onClick={() => handleVote(index)} 
-                    disabled={loading.voting}
-                  >
-                    {loading.voting ? "Procesando..." : "Votar"}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {hasVoted && (
-            <div className="voted-message">
-              <p>¡Ya has votado! Gracias por participar.</p>
-              <p>Puedes ver los resultados arriba.</p>
+        ) : (
+          <div className="voting-interface">
+            <div className="account-info">
+              <p><span className="label">Conectado como:</span> <span className="address">{`${account.slice(0, 6)}...${account.slice(-4)}`}</span></p>
+              <p><span className="label">Red:</span> <span className="network">Sepolia Testnet</span></p>
             </div>
-          )}
-        </>
-      )}
+
+            <div className="characters-grid">
+              {characters.map((character, index) => (
+                <div key={index} className="character-card">
+                  <div className="character-image">
+                    <div className="placeholder-image">{character.name.charAt(0)}</div>
+                  </div>
+                  <h2>{character.name}</h2>
+                  <div className="vote-count">
+                    <span>{character.voteCount.toString()}</span> votos
+                  </div>
+                  {!hasVoted && (
+                    <button 
+                      className="vote-button"
+                      onClick={() => handleVote(index)} 
+                      disabled={loading.voting}
+                    >
+                      {loading.voting ? (
+                        <>
+                          <span className="spinner-small"></span> Procesando...
+                        </>
+                      ) : (
+                        "Votar"
+                      )}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {hasVoted && (
+              <div className="voted-message">
+                <h3>¡Gracias por votar!</h3>
+                <p>Tu voto ha sido registrado correctamente.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <footer>
+        <p>dApp de Votación - Desarrollado con React y Ethereum</p>
+      </footer>
     </div>
   );
 }
